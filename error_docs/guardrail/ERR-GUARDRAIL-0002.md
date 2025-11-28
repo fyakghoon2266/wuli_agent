@@ -7,11 +7,11 @@ patterns:
   - "rejected by keyword check"
 ---
 
-# 一般連線錯誤（範例卡片）
+# 護欄檢查issue(keyword)
 
 如果你遇到 Content has been rejected by keyword check during th input/output process，通常代表：
 - 內容觸犯了關鍵字的政策
-- 有小概率工程師正在重新部署正則表達式的規則
+- 有小概率工程師正在重新部署關鍵字的規則
 
 建議：
 1. 可以使用以下工具來測試看看是觸犯了哪一個關鍵字的政策[護欄內容檢查系統](https://35.78.175.148/guardrails)

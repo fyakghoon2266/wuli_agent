@@ -9,7 +9,7 @@ patterns:
   - "407 Proxy"
 ---
 
-# 一般連線錯誤（範例卡片）
+# 一般連線錯誤
 
 如果你遇到 407 Proxy Authentication Required，通常代表：
 - Proxy主機認證資訊錯誤;或是未設定好

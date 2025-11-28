@@ -6,7 +6,7 @@ tags: ["certificate", "verify failed"]
 patterns: 
     - "certificate verify failed" 
 --- 
-# 一般連線錯誤（範例卡片） 
+# 一般連線錯誤
 
 如果遇到certificate verify failed，通常代表： 
 - 代理或是根憑證未安裝 

@@ -7,7 +7,8 @@ patterns:
   - "rejected by regex check"
 ---
 
-# 一般連線錯誤（範例卡片）
+# 護欄檢查issue(regex)
+
 
 如果你遇到 Content has been rejected by regex check during th input/output process，通常代表：
 - 內容觸犯了正則表達式的邏輯

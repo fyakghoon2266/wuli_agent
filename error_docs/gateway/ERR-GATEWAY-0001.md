@@ -10,7 +10,7 @@ patterns:
   - "Requests have exceeded the throughput limit on your Provisioned"
 ---
 
-# 一般連線錯誤（範例卡片）
+# 模型端錯誤
 
 如果你遇到 429 Too many request 或 RateLimitError，通常代表：
 - 模型端的TPM或是RPM達到該分鐘的上限了

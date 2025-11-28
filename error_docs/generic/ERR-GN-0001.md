@@ -8,7 +8,7 @@ patterns:
   - "ConnectionError"
 ---
 
-# 一般連線錯誤（範例卡片）
+# 逾時錯誤
 
 如果你遇到 timeout 或 ConnectionError，通常代表：
 - 後端服務暫時無法連線，或

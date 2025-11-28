@@ -10,7 +10,7 @@ patterns:
   - "InvalidToken"
 ---
 
-# 一般連線錯誤（範例卡片）
+# 一般連線錯誤
 
 如果你遇到 HTTP 401或是NotAuthorizedException，通常代表：
 - cognito token有錯誤或是cognito發過來的access Token超過有效期限
