@@ -34,3 +34,42 @@ python -m app.main
 ```bash
 python -m scripts.rebuild_index
 ```
+
+### 問題排查
+```bash
+journalctl -u wuliagent -f
+```
+
+### 新增功能
+
+```bash
+cd /home/ubuntu/services/wuliagent
+git pull  # 或 scp/rsync 更新程式
+sudo systemctl restart wuliagent
+journalctl -u wuliagent -f
+```
+
+
+### 🛠 如果你有改程式碼，記得 reload systemd（只有修改 service 檔時需要）
+
+如果你只改 Python 程式碼 → 不用 daemon-reload
+直接：
+```bash
+sudo systemctl restart wuliagent
+```
+
+如果你有改：
+```bash
+/etc/systemd/system/wuliagent.service
+```
+則要：
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart wuliagent
+```
+
+
+### 🧪 查看是否成功重啟
+```bash
+sudo systemctl status wuliagent
+```

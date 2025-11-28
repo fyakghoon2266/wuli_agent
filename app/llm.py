@@ -53,7 +53,7 @@ def build_llm():
             azure_deployment=AZURE_OPENAI_DEPLOYMENT,
             timeout=TIMEOUT_SECONDS,
             temperature=0.2,
-            streaming=True
+            streaming=False
         )
 
     if LLM_PROVIDER == "bedrock":
