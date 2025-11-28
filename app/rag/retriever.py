@@ -1,5 +1,6 @@
 # app/rag/retriever.py
 from typing import List, Tuple
+import re
 
 from .models import ErrorCard
 from .error_card_loader import load_error_cards
@@ -26,8 +27,8 @@ def rule_based_match(query: str, k: int = 3) -> List[ErrorCard]:
     第一層：使用 ErrorCard.patterns 做 rule-based 匹配。
     只要 patterns 中任一字串出現在 query 內，就視為命中。
 
-    ⚠️ 不再使用全域快取，每次都從 error_docs/ 重新載入，
-       這樣新增 / 修改卡片不需要重啟服務就會生效。
+    每次都從 error_docs/ 重新載入，
+    這樣新增 / 修改卡片不需要重啟服務就會生效。
     """
     cards = load_error_cards(ERROR_DOCS_DIR)
 
@@ -46,13 +47,14 @@ def rule_based_match(query: str, k: int = 3) -> List[ErrorCard]:
 
     return hits[:k]
 
-
 def retrieve_cards(query: str, k: int = 3) -> List[Tuple[str, str]]:
     """
     對外的檢索介面：
 
     1. 先用 rule-based pattern match（patterns）
-    2. 若沒有命中，再 fallback 到 Chroma 語意搜尋
+    2. 若沒有命中，再看這句話是不是「錯誤 / log 型」
+       - 是：才 fallback 到 Chroma 語意搜尋
+       - 否：直接不啟用 RAG（回傳空），交給 LLM 用對話上下文回答
     3. 回傳 [(card_id, card_content), ...]
     """
     query = (query or "").strip()
@@ -72,4 +74,3 @@ def retrieve_cards(query: str, k: int = 3) -> List[Tuple[str, str]]:
     docs = res.get("documents", [[]])[0]
 
     return list(zip(ids, docs))
-
