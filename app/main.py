@@ -5,9 +5,11 @@ from typing import Any, Dict, List
 import gradio as gr
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
+
+
 # 改成 import AGENT_EXECUTOR
 from .llm import AGENT_EXECUTOR, LLM_PROVIDER
-
+from .utils.logging import save_chat_log
 # ===================== 文案設定 (保留原本的 Wuli 人設) =====================
 
 SYSTEM_PROMPT = """
@@ -158,8 +160,15 @@ def respond(message: str, history: List[Any]):
                     yield partial_message
                     time.sleep(0.005) # 控制打字速度，數值越小越快
 
+                save_chat_log(message, final_answer)
+
     except Exception as e:
-        yield f"😿 嗚... Wuli 好像壞掉了：{str(e)}"
+        error_msg = f"😿 嗚... Wuli 好像壞掉了：{str(e)}"
+        
+        # [新增] 發生錯誤也要記錄，方便之後排查
+        save_chat_log(message, error_msg)
+        
+        yield error_msg
 
 # ==================== feed back ============================
 
