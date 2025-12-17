@@ -400,6 +400,41 @@ with gr.Blocks(title="Wuli - Gaia Error Agent") as demo:
         elem_id="chat-input" 
     )
 
+
+    chatbot.like(on_feedback, chatbot, None)
+
+    auto_focus_js = """
+    () => {
+        const el = document.getElementById('chat-input');
+        const textarea = el?.querySelector('textarea');
+        if (!textarea) return;
+
+        // 避免重複執行：如果已經有一個檢查排程在跑，先清除它
+        if (window.wuliFocusTimer) clearInterval(window.wuliFocusTimer);
+
+        // 設定排程：每 100ms 檢查一次
+        window.wuliFocusTimer = setInterval(() => {
+            // 只有當 textarea 不再是 disabled 狀態時，focus 才會成功
+            if (!textarea.disabled) {
+                textarea.focus();
+                
+                // 成功後，清除排程，停止檢查
+                clearInterval(window.wuliFocusTimer);
+                window.wuliFocusTimer = null;
+            }
+        }, 100);
+    }
+    """
+
+    # 3. 定義 JavaScript 自動 Focus 事件
+    # (注意：這裡的 JS 不需要改，邏輯是正確的)
+    chatbot.change(
+        fn=None,
+        inputs=[],
+        outputs=[],
+        js=auto_focus_js
+    )
+
     # 2. 定義 ChatInterface
     chat_interface = gr.ChatInterface(
         fn=respond,
@@ -418,17 +453,6 @@ with gr.Blocks(title="Wuli - Gaia Error Agent") as demo:
             "貼上錯誤 log / 報錯訊息 / 使用情境，**Wuli** 🐱會盡力協助你分析。"
         )
     )
-
-    # 3. 定義 JavaScript 自動 Focus 事件
-    # (注意：這裡的 JS 不需要改，邏輯是正確的)
-    chatbot.change(
-        fn=None,
-        inputs=[],
-        outputs=[],
-        js="() => { setTimeout(() => { const el = document.getElementById('chat-input'); if(el) el.querySelector('textarea').focus(); }, 100); }"
-    )
-
-    chatbot.like(on_feedback, chatbot, None)
 
 if __name__ == "__main__":
     demo.launch(server_name="127.0.0.1", server_port=8002, root_path="/wuliagent")
