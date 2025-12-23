@@ -1,6 +1,11 @@
 # app/llm.py
 import os
 from typing import List, Dict, Any
+import json
+import psycopg2 # 新增這個
+import datetime
+
+from typing import Optional
 
 import smtplib
 from email.mime.text import MIMEText
@@ -23,6 +28,7 @@ from langchain.tools import tool
 # from langchain.agents import create_tool_calling_agenc
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from gradio_client import Client
 
 from .rag.retriever import retrieve_cards, init_rag
 
@@ -54,6 +60,14 @@ SMTP_PORT = 587
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")  # Wuli 的發信帳號
 SENDER_PASSWORD = os.getenv("SENDER_PASSWORD") # 應用程式密碼
 ENGINEER_EMAIL = os.getenv("ENGINEER_EMAIL") # 值班工程師的 Email
+
+LITELLM_DB_CONFIG = {
+    "dbname": "litellm",
+    "user": "postgres",
+    "password": "sk-1234",
+    "host": "localhost", 
+    "port": "5432"
+}
 
 
 def build_llm():
@@ -187,6 +201,173 @@ def send_email_to_engineer(user_name: str, user_email: str, problem_summary: str
     except Exception as e:
         return f"❌ 寄信失敗：{str(e)}"
 
+@tool
+def search_litellm_logs(
+    keyword: str = "",
+    lookback_minutes: int = 60,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None
+):
+    """
+    【LiteLLM Log 查詢工具 - 自動校正時區版】
+    
+    功能：查詢 Log 並自動將 UTC 時間轉換為台北時間 (+8) 顯示。
+    """
+    try:
+        conn = psycopg2.connect(**LITELLM_DB_CONFIG)
+        cursor = conn.cursor()
+
+        # [重點 1] 在 SQL 查詢欄位時，直接 +8 小時，讓回傳給 Python 的就是台北時間
+        base_sql = """
+        SELECT 
+            ("startTime" + INTERVAL '8 hours') as local_time,
+            "user",
+            messages, 
+            proxy_server_request, 
+            response
+        FROM "LiteLLM_SpendLogs"
+        """
+        
+        conditions = []
+        params = []
+
+        # --- 動態決定查詢條件 ---
+        
+        # 這裡的邏輯是：
+        # 資料庫裡的 startTime 是 UTC (02:00)。
+        # 加上 8 小時後變成台北時間 (10:00)。
+        # 我們拿這個「變換後的時間」來跟使用者的條件 (10:00) 做比較。
+
+        if start_time:
+            # 絕對時間查詢
+            conditions.append('("startTime" + INTERVAL \'8 hours\') >= %s')
+            params.append(start_time)
+            
+            if end_time:
+                conditions.append('("startTime" + INTERVAL \'8 hours\') <= %s')
+                params.append(end_time)
+                
+        else:
+            # 相對時間查詢 (最近 N 分鐘)
+            # 因為你的 DB 已經設成 Asia/Taipei，所以 NOW() 是台北時間
+            # 我們拿 (UTC資料 + 8) 來跟 (台北NOW) 比較，這樣單位就統一了
+            conditions.append('("startTime" + INTERVAL \'8 hours\') >= NOW() - INTERVAL %s') 
+            params.append(f"{lookback_minutes} minutes")
+
+        # 組合 WHERE 子句
+        if conditions:
+            base_sql += " WHERE " + " AND ".join(conditions)
+        
+        # 排序 (用原始 startTime 排就好，結果一樣)
+        base_sql += ' ORDER BY "startTime" DESC LIMIT 15;'
+
+        # 執行查詢
+        cursor.execute(base_sql, tuple(params))
+        rows = cursor.fetchall()
+        
+        if not rows:
+            return f"📭 查詢完成，但在指定區間內沒有找到 Log (已自動校正 +8 時區)。"
+
+        result_text = []
+        for row in rows:
+            t_start, user_id, msgs, proxy_req, resp = row
+            
+            # t_start 現在已經是 Postgres 算好的台北時間了，直接轉字串
+            # 如果它是 datetime 物件，轉成乾淨的字串格式
+            if isinstance(t_start, datetime.datetime):
+                t_start_str = t_start.strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                t_start_str = str(t_start)
+
+            # --- 解析 Prompt (Input) ---
+            prompt_content = "(無法讀取 Prompt)"
+            if isinstance(msgs, list) and len(msgs) > 0:
+                prompt_content = msgs[-1].get('content', '')
+            elif proxy_req:
+                try:
+                    hidden_msgs = proxy_req.get('messages') or proxy_req.get('body', {}).get('messages')
+                    if hidden_msgs:
+                        prompt_content = hidden_msgs[-1].get('content', '')
+                except:
+                    pass
+
+            # 關鍵字過濾
+            if keyword:
+                search_target = f"{str(user_id)} {prompt_content}"
+                if keyword.lower() not in search_target.lower():
+                    continue
+
+            # --- 解析 Response (Output) ---
+            output_content = "Success"
+            if isinstance(resp, dict):
+                if 'error' in resp:
+                    output_content = f"❌ Error: {resp['error']}"
+                else:
+                    choices = resp.get('choices', [])
+                    if choices:
+                        output_content = f"✅ Reply: {choices[0]['message']['content'][:50]}..."
+
+            # 格式化輸出
+            log_entry = (
+                f"⏰ 時間 (Taipei): {t_start_str}\n"
+                f"👤 User: {user_id}\n"
+                f"📝 Prompt: {prompt_content[:200]}...\n"
+                f"📤 狀態: {output_content}\n"
+                "------------------------------------------------"
+            )
+            result_text.append(log_entry)
+
+        conn.close()
+        
+        if not result_text:
+            return f"已搜尋資料庫，但在過濾關鍵字 '{keyword}' 後沒有符合的紀錄。"
+            
+        return "\n".join(result_text)
+
+    except Exception as e:
+        return f"💥 資料庫查詢失敗: {str(e)}"
+
+from gradio_client import Client # <--- 記得在最上面加這個
+
+# ... (其他的 import 和工具) ...
+
+@tool
+def verify_prompt_with_guardrails(prompt_content: str):
+    """
+    【護欄阻擋原因檢查器】
+    
+    使用時機：
+    1. 當 `search_litellm_logs` 查到某個 Prompt 被阻擋，但 Log 裡沒有詳細原因時。
+    2. 使用者問：「為什麼這句話不行？」、「幫我檢查這句話有沒有違規」。
+    3. Wuli 需要判斷某個 Payload 到底是中了「關鍵字」、「正則」還是「LLM 審查」。
+    4. 【直接檢查】：當使用者直接貼出一段文字問：「這句話為什麼被擋？」、「幫我檢查這段 Prompt 有沒有違規」、「這句話會過嗎？」。
+    
+    Args:
+        prompt_content: 要檢查的使用者輸入內容 (User Prompt)。
+    """
+    try:
+        # 連線到你的 Guardrails API
+        client = Client("https://35.78.175.148/guardrails/", ssl_verify=False)
+        
+        # 呼叫預測
+        result = client.predict(
+            user_text=prompt_content,
+            api_name="/check_all"
+        )
+        
+        # result 是一個 tuple，包含 (LLM檢查結果, 關鍵字檢查結果, 正則檢查結果)
+        # 我們把它組合成清楚的字串回傳給 Wuli
+        formatted_result = (
+            f"🛡️ 【檢查報告】 針對內容: '{prompt_content[:50]}...'\n"
+            f"1. {result[0]}\n"
+            f"2. {result[1]}\n"
+            f"3. {result[2]}\n"
+        )
+        return formatted_result
+
+    except Exception as e:
+        return f"💥 呼叫護欄 API 失敗: {str(e)}"
+
 # 未來如果有 LiteLLM DB 工具，就加在這裡
 # @tool
 # def check_litellm_logs(user_id: str): ...
@@ -196,7 +377,11 @@ def send_email_to_engineer(user_name: str, user_email: str, problem_summary: str
 
 def build_agent_executor():
     # 1. 工具清單：加入 send_email_to_engineer
-    tools = [search_error_cards, send_email_to_engineer] 
+    tools = [
+        search_error_cards, 
+        send_email_to_engineer,
+        search_litellm_logs, 
+        verify_prompt_with_guardrails] 
 
     # 2. Agent Prompt (保持不變)
     prompt = ChatPromptTemplate.from_messages([
