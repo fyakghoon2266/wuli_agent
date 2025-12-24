@@ -41,12 +41,12 @@ def build_llm():
 
     elif provider == "bedrock":
         return ChatBedrock(
-            model_id=settings.BEDROCK_MODEL_ID,
-            region_name=settings.AWS_REGION,
-            timeout=settings.TIMEOUT_SECONDS,
-            temperature=0.2,
-            streaming=True
-        )
+        model_id=settings.BEDROCK_MODEL_ID,  # 或者用 haiku / opus
+        region_name=settings.AWS_REGION,  # 或是你模型開通的區域，如 us-west-2
+        model_kwargs={
+            "temperature": 0.2,
+        }
+    )
 
     else: # 預設為 OpenAI
         if not settings.OPENAI_API_KEY:
