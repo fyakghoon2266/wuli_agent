@@ -28,7 +28,7 @@ def create_demo(respond_fn, feedback_fn):
         # 2. 定義 Chatbot 元件
         chatbot = gr.Chatbot(
             label="Wuli - Gaia Error Agent",
-            height=800,
+            height=600,
             elem_id="wuli-chatbot",
             # 注意：這裡的路徑是相對於執行 main.py 的位置
             avatar_images=("app/images/milu.jpeg", "app/images/wuli.jpeg"),
@@ -42,12 +42,12 @@ def create_demo(respond_fn, feedback_fn):
         )
 
         # 3. 定義輸入框
-        textbox = gr.Textbox(
-            label="輸入訊息 / 貼上 error log",
-            placeholder="把你遇到的錯誤訊息、log 或問題描述貼給 Wuli 看看。",
-            submit_btn=True,
-            elem_id="chat-input" 
-        )
+        # textbox = gr.Textbox(
+        #     label="輸入訊息 / 貼上 error log",
+        #     placeholder="把你遇到的錯誤訊息、log 或問題描述貼給 Wuli 看看。",
+        #     submit_btn=True,
+        #     elem_id="chat-input" 
+        # )
 
         # 4. 綁定 Feedback 事件
         chatbot.like(feedback_fn, chatbot, None)
@@ -73,11 +73,11 @@ def create_demo(respond_fn, feedback_fn):
         autoscroll=True,
         title="Wuli - Gaia Error Agent",
         description=(
-            f"模型 Provider：`{settings.LLM_PROVIDER}`\n\n"
+            f"模型 Provider：`{settings.LLM_PROVIDER}`\n"
             "</br>"
             "這是一個協助排查 Gaia 基礎建設相關錯誤的問答貓貓助手🐱。\n"
             "</br>"
-            "貼上錯誤 log / **截圖 (AWS Console, Grafana)** / 使用情境，**Wuli** 🐱會盡力協助你分析。"
+            "貼上錯誤 log / **error log 截圖** / 使用情境，**Wuli** 🐱會盡力協助你分析。"
         )
     )
     
