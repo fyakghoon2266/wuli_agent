@@ -8,8 +8,10 @@ load_dotenv()
 
 import chromadb
 from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
+from langchain_aws import BedrockEmbeddings
 from chromadb.utils import embedding_functions
 
+from app.config import settings
 from .models import ErrorCard
 
 
@@ -29,13 +31,16 @@ class LangChainOpenAIEmbeddingFunction(embedding_functions.EmbeddingFunction):
         if provider == "azure":
             # 這些環境變數請照你實際的 Azure 設定
             self._emb = AzureOpenAIEmbeddings(
-                azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-                api_key=os.environ["AZURE_OPENAI_API_KEY"],
-                api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-05-01-preview"),
-                azure_deployment=os.environ[
-                    "AZURE_OPENAI_EMBEDDING_DEPLOYMENT"
-                ],  # 建議用獨立的 embedding deployment
+                azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+                api_key=settings.AZURE_OPENAI_API_KEY,
+                api_version=settings.AZURE_OPENAI_API_VERSION,
+                azure_deployment=settings.AZURE_OPENAI_EMBEDDING_DEPLOYMENT
             )
+        elif provider == 'bedrock':
+            self._emb = BedrockEmbeddings(
+                model_id=settings.BEDROCK_EMBEDDING_ID
+            )
+
         else:
             # 預設走 OpenAI 公有雲
             self._emb = OpenAIEmbeddings(

@@ -14,10 +14,12 @@ class Config:
     AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
     AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-05-01-preview")
     AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+    AZURE_OPENAI_EMBEDDING_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT")
     # ... (其他 Azure/Bedrock 設定) ...
 
     # Bedrock
     BEDROCK_MODEL_ID = os.getenv("BEDROCK_MODEL_ID")
+    BEDROCK_EMBEDDING_ID = os.getenv("BEDROCK_EMBEDDING_ID")
     AWS_REGION = os.getenv("AWS_REGION")
 
     # Email 設定
