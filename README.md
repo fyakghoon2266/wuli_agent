@@ -1,25 +1,26 @@
 ```css
-llm_infra_helper/
-├── .env                  # 你的 Azure / OpenAI / Bedrock 等設定（dotenv 已經用上）
-├── error_docs/           # Error Card Markdown 放這裡（之後維運同事只碰這裡）
-│   ├── gateway/
-│   │   └── ERR-GW-0001-rate-limit.md
-│   ├── guardrail/
-│   │   └── EVT-GR-0001-block.md
-│   └── generic/
-│       └── ERR-GN-0001-unknown.md
-├── chroma_db/            # Chroma 的持久化資料夾（程式會自動建立）
+WULI_AGENT/
+├── .env                  # 環境變數 (機密)
+├── requirements.txt
 └── app/
     ├── __init__.py
-    ├── main.py           # Gradio 入口（原本那支檔案的 UI 部分）
-    ├── llm.py            # build_llm + call_llm_with_rag（你原本的邏輯搬來＋RAG）
-    └── rag/
-        ├── __init__.py
-        ├── models.py         # ErrorCard 結構
-        ├── error_card_loader.py  # 讀 error_docs/*.md + frontmatter
-        ├── chroma_store.py   # 建立 Chroma vector store
-        └── retriever.py      # 封裝「給問題 → 找對應 card」的 API
-
+    ├── config.py         # [新建] 集中管理所有全域變數與設定
+    ├── prompts.py        # [新建] 集中管理 System Prompt 與文案
+    ├── llm_factory.py    # [重構 llm.py] 專注於產生 LLM 與 Agent 實體
+    ├── main.py           # 程式入口 (Entry Point)
+    ├── tools/            # [新建] 工具包，將 Tool 拆開
+    │   ├── __init__.py
+    │   ├── ops.py        # 查 Log, 查錯誤卡片
+    │   ├── communication.py # 寄信
+    │   └── security.py   # 護欄檢查
+    ├── ui/               # [新建] UI 相關
+    │   ├── __init__.py
+    │   ├── layout.py     # Gradio 介面建構
+    │   └── styles.py     # CSS 樣式
+    ├── utils/            # 工具函式
+    │   ├── logging.py    # 你的 save_chat_log
+    │   └── ...
+    └── rag/              # 既有的 RAG 邏輯
 ```
 
 

@@ -16,6 +16,10 @@ class Config:
     AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
     # ... (其他 Azure/Bedrock 設定) ...
 
+    # Bedrock
+    BEDROCK_MODEL_ID = os.getenv("BEDROCK_MODEL_ID")
+    AWS_REGION = os.getenv("AWS_REGION")
+
     # Email 設定
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
