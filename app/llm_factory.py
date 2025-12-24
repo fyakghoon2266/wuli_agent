@@ -85,7 +85,8 @@ def build_agent_executor():
     prompt = ChatPromptTemplate.from_messages([
         ("system", SYSTEM_PROMPT), 
         MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{input}"),
+        # ("human", "{input}"),
+        MessagesPlaceholder(variable_name="user_message"),
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
 

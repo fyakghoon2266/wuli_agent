@@ -3,7 +3,7 @@ id: ERR-GN-0002
 component: generic
 category: error
 http_status: 500
-tags: ["key alias", "decode"]
+tags: ["500 Internal Server Error", "key alias", "decode"]
 patterns:
   - "Error retrieving rules for key alias"
 ---
@@ -11,7 +11,7 @@ patterns:
 
 # 認證錯誤
 
-如果遇到Error retrieving rules for key alias，通常代表：
+如果遇到500 Internal Server Error Error retrieving rules for key alias，通常代表：
 - 護欄發過來的guardrail token(護欄的key)跟規則的名稱不一致
 
 建議：

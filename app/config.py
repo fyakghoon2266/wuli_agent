@@ -39,7 +39,7 @@ class Config:
     }
 
     # Guardrails API
-    GUARDRAILS_API_URL = "https://35.78.175.148/guardrails/"
+    GUARDRAILS_API_URL = "http://127.0.0.1:7860/"
 
 # 實例化一個全域設定物件
 settings = Config()

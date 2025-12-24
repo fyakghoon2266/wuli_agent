@@ -28,7 +28,7 @@ def create_demo(respond_fn, feedback_fn):
         # 2. 定義 Chatbot 元件
         chatbot = gr.Chatbot(
             label="Wuli - Gaia Error Agent",
-            height=600,
+            height=800,
             elem_id="wuli-chatbot",
             # 注意：這裡的路徑是相對於執行 main.py 的位置
             avatar_images=("app/images/milu.jpeg", "app/images/wuli.jpeg"),
@@ -63,21 +63,22 @@ def create_demo(respond_fn, feedback_fn):
         # 6. 使用 ChatInterface 整合
         # 這裡將外部傳入的 respond_fn 綁定進去
         gr.ChatInterface(
-            fn=respond_fn,
-            flagging_mode="manual",
-            chatbot=chatbot,
-            textbox=textbox,
-            submit_btn=True,
-            autofocus=True,
-            autoscroll=True,
-            title="Wuli - Gaia Error Agent",
-            description=(
-                f"模型 Provider：`{settings.LLM_PROVIDER}`\n\n"
-                "</br>"
-                "這是一個協助排查 Gaia 基礎建設相關錯誤的問答貓貓助手🐱。\n"
-                "</br>"
-                "貼上錯誤 log / 報錯訊息 / 使用情境，**Wuli** 🐱會盡力協助你分析。"
-            )
+        fn=respond_fn,
+        flagging_mode="manual",
+        chatbot=chatbot,
+        # textbox=textbox, <--- 這行刪掉，讓 ChatInterface 自己產生多模態輸入框
+        multimodal=True,   # <--- 🔥 關鍵：開啟多模態 (出現上傳按鈕) 🔥
+        submit_btn=True,
+        autofocus=True,
+        autoscroll=True,
+        title="Wuli - Gaia Error Agent",
+        description=(
+            f"模型 Provider：`{settings.LLM_PROVIDER}`\n\n"
+            "</br>"
+            "這是一個協助排查 Gaia 基礎建設相關錯誤的問答貓貓助手🐱。\n"
+            "</br>"
+            "貼上錯誤 log / **截圖 (AWS Console, Grafana)** / 使用情境，**Wuli** 🐱會盡力協助你分析。"
         )
-        
+    )
+    
     return demo
