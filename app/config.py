@@ -41,5 +41,10 @@ class Config:
     # Guardrails API
     GUARDRAILS_API_URL = "http://127.0.0.1:7860/"
 
+    # git pos settings
+    GITHUB_TOKEN=os.getenv("GITHUB_TOKEN")
+    GITHUB_REPO_NAME=os.getenv("GITHUB_REPO_NAME")
+    BASE_BRANCH=os.getenv("BASE_BRANCH")
+
 # 實例化一個全域設定物件
 settings = Config()

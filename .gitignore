@@ -11,6 +11,8 @@ __pycache__/
 .Python
 chroma-db/
 chroma_db/
+data/
+log/
 build/
 develop-eggs/
 dist/

@@ -1,9 +1,11 @@
 # app/tools/search.py
 from langchain.tools import tool
-from langchain_community.tools.tavily_search import TavilySearchResults
+# from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_tavily import TavilySearch
+
 
 # 1. 準備搜尋引擎實體
-_tavily_engine = TavilySearchResults(max_results=3)
+_tavily_engine = TavilySearch(max_results=3)
 
 # 2. 直接定義工具，並用 @tool 裝飾
 # 注意：這裡我把 Python 函式名稱直接取名為 get_search_tool

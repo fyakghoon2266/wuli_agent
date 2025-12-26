@@ -16,6 +16,7 @@ from app.prompts import SYSTEM_PROMPT
 from app.llm_factory import AgentSingleton
 from app.ui.layout import create_demo
 from app.utils.logging import save_chat_log
+from app.scheduler import start_scheduler
 
 # 取得 Agent 執行器實體
 agent_executor = AgentSingleton.get_executor()
@@ -323,5 +324,10 @@ def on_feedback(x: gr.LikeData, history):
 # ===================== 程式入口 =====================
 
 if __name__ == "__main__":
+
+    # 啟動排程時間
+
+    start_scheduler()
+
     demo = create_demo(respond_fn=respond, feedback_fn=on_feedback)
     demo.launch(server_name="127.0.0.1", server_port=8002, root_path="/wuliagent")
