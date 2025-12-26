@@ -229,6 +229,11 @@ def respond(message: dict, history: List[Any]):
                          yield "🛡️ Wuli 正在進行安全檢查..."
                     elif action.tool == "send_email_to_engineer":
                          yield "📧 Wuli 正在寫信給工程師..."
+
+                    # 🔥【新增】Web Search 的狀態提示
+                    # 這裡的名稱必須跟 app/tools/search.py 裡的 @tool("name") 一模一樣
+                    elif action.tool == "web_search_technical_solution":
+                         yield "🌐 內部查無資料，Wuli 正在搜尋外部網站解答中..."
             
             if "output" in chunk:
                 final_answer = chunk["output"]

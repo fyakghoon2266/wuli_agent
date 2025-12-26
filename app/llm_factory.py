@@ -17,6 +17,7 @@ from app.rag.retriever import init_rag
 from app.tools.ops import search_error_cards, search_litellm_logs
 from app.tools.communication import send_email_to_engineer
 from app.tools.security import verify_prompt_with_guardrails
+from app.tools.search import get_search_tool
 
 def build_llm():
     """
@@ -77,7 +78,8 @@ def build_agent_executor():
         search_error_cards,           # 查手冊 (ops.py)
         search_litellm_logs,          # 查 Log (ops.py)
         send_email_to_engineer,       # 寄信 (communication.py)
-        verify_prompt_with_guardrails # 查護欄 (security.py)
+        verify_prompt_with_guardrails, # 查護欄 (security.py)
+        get_search_tool                # 新增：外部搜尋 (最後一道防線)
     ]
 
     # 4. 設定 Prompt Template
