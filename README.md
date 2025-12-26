@@ -90,4 +90,4 @@ sudo systemctl status wuliagent
 
 ### 紀錄維運功能語法:
 
-@wuli
+@wuli加入到維運周報

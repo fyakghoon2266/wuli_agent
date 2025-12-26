@@ -20,6 +20,7 @@ from app.tools.security import verify_prompt_with_guardrails
 from app.tools.search import get_search_tool
 from app.tools.git_ops import propose_new_error_card
 from app.tools.incident import log_incident_for_weekly_report
+from app.tools.selfie import send_wuli_photo
 
 def build_llm():
     """
@@ -83,7 +84,8 @@ def build_agent_executor():
         verify_prompt_with_guardrails, # 查護欄 (security.py)
         get_search_tool,                # 新增：外部搜尋 (最後一道防線)
         propose_new_error_card,
-        log_incident_for_weekly_report
+        log_incident_for_weekly_report,
+        send_wuli_photo
     ]
 
     # 4. 設定 Prompt Template
