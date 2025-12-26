@@ -74,3 +74,20 @@ sudo systemctl restart wuliagent
 ```bash
 sudo systemctl status wuliagent
 ```
+
+
+
+### aws cognito測試題目:
+
+請問在cognito認證的時候遇到 InvalidParameterException / LimitExceededException錯誤要怎麼辦?
+
+可以幫我把這一題新增到知識庫裡面嗎?
+
+### 網頁搜尋範例:
+
+可以幫我用網路搜尋看看litellm ContextWindowExceededError 的錯誤嗎?
+
+
+### 紀錄維運功能語法:
+
+@wuli
