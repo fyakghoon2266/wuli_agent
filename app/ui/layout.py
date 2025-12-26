@@ -31,6 +31,7 @@ def create_demo(respond_fn, feedback_fn):
         file_count="multiple" 
     )
 
+    # 這裡我們甚至不傳 theme 了，因為我們的 CSS 已經接管了一切
     with gr.Blocks(fill_height=True, title="Wuli - Gaia Error Agent") as demo:
         
         gr.HTML(GEMINI_STYLE_CSS)
