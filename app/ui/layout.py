@@ -28,7 +28,8 @@ def create_demo(respond_fn, feedback_fn):
         lines=1,
         max_lines=5, 
         elem_id="chat-input", 
-        file_count="multiple" 
+        file_count="multiple",
+        file_types=[".jpg", ".jpeg", ".png", ".webp", ".txt", ".pdf", ".docx", ".log", ".json"]
     )
 
     # 這裡我們甚至不傳 theme 了，因為我們的 CSS 已經接管了一切
