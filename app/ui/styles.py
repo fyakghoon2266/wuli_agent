@@ -1,4 +1,4 @@
-# ===================== 💎 Gemini 風格 CSS (Button Fix) =====================
+# ===================== 💎 Gemini 風格 CSS (大頭像優化版) =====================
 
 GEMINI_STYLE_CSS = """
 <style>
@@ -44,12 +44,12 @@ footer { display: none !important; }
     margin-right: auto !important;
 }
 
-/* 4. 頭貼設定 */
+/* 4. 頭貼設定 (加大版) */
 .avatar-container {
-    width: 40px !important;
-    height: 40px !important;
+    width: 55px !important;  /* 原本 40px -> 改為 55px */
+    height: 55px !important; /* 原本 40px -> 改為 55px */
     border-radius: 50% !important;
-    margin-right: 12px !important;
+    margin-right: 15px !important; /* 間距稍微拉大 */
 }
 .avatar-container img {
     width: 100% !important;
@@ -90,7 +90,7 @@ footer { display: none !important; }
     padding: 10px !important;
 }
 
-/* 針對所有按鈕做基本設定 */
+/* 按鈕樣式 */
 #chat-input button {
     border: none !important;
     background: transparent !important;
@@ -98,26 +98,25 @@ footer { display: none !important; }
     transition: all 0.2s ease;
 }
 
-/* 上傳按鈕 (通常是第一個或有特定 class) */
+/* 上傳按鈕 */
 #chat-input button.upload-button, 
 #chat-input button:first-of-type {
     color: #a8c7fa !important;
     padding: 0 10px !important;
 }
 
-/* 🔥【修正】送出按鈕 (抓最後一個按鈕) */
+/* 送出按鈕 (正常) */
 #chat-input button:last-of-type {
-    color: #a8c7fa !important; /* 亮藍色 */
+    color: #a8c7fa !important; 
 }
 
-/* 🔥【修正】送出按鈕 (Disabled 鎖定狀態) */
+/* 送出按鈕 (Disabled 鎖定) */
 #chat-input button:last-of-type:disabled {
-    color: #444746 !important; /* 暗灰色 */
+    color: #444746 !important; 
     cursor: not-allowed !important;
     opacity: 0.5 !important;
 }
 
-/* 隱藏雜項 */
 .form { background: transparent !important; border: none !important; }
 label.svelte-1b6s6s { display: none !important; }
 span.svelte-1gfkn6j { display: none !important; }
@@ -130,39 +129,41 @@ span.svelte-1gfkn6j { display: none !important; }
     #wuli-chatbot {
         padding-bottom: 100px !important;
     }
+    /* 手機版可以稍微縮小一點點，避免佔太多空間 */
+    .avatar-container {
+        width: 45px !important;
+        height: 45px !important;
+    }
 }
 </style>
 """
 
-# ===================== 🧠 智慧防呆 JavaScript (修復版) =====================
+# ===================== 🧠 智慧防呆 JavaScript (保持不變) =====================
 
 CHECK_INPUT_JS = """
 () => {
     const el = document.getElementById('chat-input');
     if (!el) return;
 
-    const textarea = el.querySelector('textarea');
-    // 【修正】不找 id，直接找最後一個按鈕 (那就是送出鍵)
-    const buttons = el.querySelectorAll('button');
-    const btn = buttons[buttons.length - 1];
-    
-    if (!textarea || !btn) {
-        console.log("Wuli Debug: 找不到輸入框或按鈕");
-        return;
-    }
-
+    // 定義檢查函式
     const checkState = () => {
+        const textarea = el.querySelector('textarea');
+        
+        // 重新抓取最新的按鈕
+        const buttons = el.querySelectorAll('button');
+        const btn = buttons[buttons.length - 1]; 
+
+        if (!textarea || !btn) return;
+
         const text = textarea.value.trim();
-        // 檢查是否有圖片 (縮圖 class 通常是 .thumbnail-item 或 img 標籤)
         const hasFile = el.querySelector('img') || el.querySelector('.thumbnail-item') || el.querySelector('.file-preview');
 
+        // 判斷邏輯
         if (!text && !hasFile) {
-            // 沒字且沒圖 -> 鎖定
             btn.disabled = true;
             btn.style.color = "#444746"; 
             btn.style.cursor = "not-allowed";
         } else {
-            // 有內容 -> 解鎖
             btn.disabled = false;
             btn.style.color = "#a8c7fa";
             btn.style.cursor = "pointer";
@@ -170,17 +171,20 @@ CHECK_INPUT_JS = """
     }
 
     // 1. 綁定輸入事件
-    textarea.addEventListener('input', checkState);
+    el.addEventListener('input', checkState);
 
-    // 2. 監聽 DOM 變化 (針對圖片上傳)
-    const observer = new MutationObserver(checkState);
+    // 2. 監聽 DOM 變化
+    const observer = new MutationObserver((mutations) => {
+        checkState();
+    });
     observer.observe(el, {subtree: true, childList: true});
 
     // 3. 自動聚焦
     if (window.wuliFocusTimer) clearInterval(window.wuliFocusTimer);
     window.wuliFocusTimer = setInterval(() => {
-        if (!textarea.disabled) {
-            textarea.focus();
+        const ta = el.querySelector('textarea');
+        if (ta && !ta.disabled) {
+            ta.focus();
             clearInterval(window.wuliFocusTimer);
             window.wuliFocusTimer = null;
         }
