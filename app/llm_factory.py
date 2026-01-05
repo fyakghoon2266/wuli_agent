@@ -22,6 +22,7 @@ from app.tools.git_ops import propose_new_error_card
 from app.tools.incident import log_incident_for_weekly_report
 from app.tools.selfie import send_wuli_photo
 from app.tools.jira_ops import report_issue_to_jira
+from app.tools.lifecycle import check_model_eol
 
 def build_llm():
     """
@@ -87,7 +88,8 @@ def build_agent_executor():
         propose_new_error_card,
         log_incident_for_weekly_report,
         send_wuli_photo,
-        report_issue_to_jira
+        report_issue_to_jira,
+        check_model_eol
     ]
 
     # 4. 設定 Prompt Template
