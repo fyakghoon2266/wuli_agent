@@ -66,31 +66,46 @@ def build_llm():
             streaming=True
         )
 
-def build_agent_executor():
+def build_agent_executor(is_admin: bool = False):
     """
     組裝 LLM、Tools 與 Prompt，建立 Agent 執行器。
     """
+
+    """
+    根據是否為管理員，回傳不同權限的 Agent
+    """
+    
+    # 1. 定義基礎工具 (所有人都能用：搜尋、問答、查看照片)
+    base_tools = [
+        search_error_cards,            # 查錯誤卡片
+        search_litellm_logs,           # 查 Log (唯讀)
+        get_search_tool,               # 上網搜尋 (Tavily)
+        verify_prompt_with_guardrails, # 檢查護欄
+        send_wuli_photo,               # 看貓照
+        check_model_eol              # 查模型 EOL
+    ]
+
+    # 2. 定義管理員工具 (只有 Admin 能用：寫入、發信、開票)
+    admin_tools = [
+        send_email_to_engineer,        # 騷擾工程師
+        propose_new_error_card,        # 新增錯誤知識庫
+        log_incident_for_weekly_report,# 寫週報
+        report_issue_to_jira           # 開 Jira 單
+    ]
+
+    # 3. 根據權限組合工具箱
+    if is_admin:
+        print("🛡️  啟用 Admin 模式：授權所有高風險工具")
+        tools = base_tools + admin_tools
+    else:
+        print("👤 啟用 User 模式：僅授權唯讀/查詢工具")
+        tools = base_tools
     # 1. 初始化 RAG (載入 ChromaDB)
     # 放在這裡的好處是：只有在 Agent 真正要被建立時，才會去讀取 Vector DB，加快 import 速度
     init_rag() 
 
     # 2. 建立 LLM
     llm = build_llm()
-
-    # 3. 準備工具清單
-    # 這裡將從不同模組 import 進來的工具組合在一起
-    tools = [
-        search_error_cards,           # 查手冊 (ops.py)
-        search_litellm_logs,          # 查 Log (ops.py)
-        send_email_to_engineer,       # 寄信 (communication.py)
-        verify_prompt_with_guardrails, # 查護欄 (security.py)
-        get_search_tool,                # 新增：外部搜尋 (最後一道防線)
-        propose_new_error_card,
-        log_incident_for_weekly_report,
-        send_wuli_photo,
-        report_issue_to_jira,
-        check_model_eol
-    ]
 
     # 4. 設定 Prompt Template
     # 使用 ChatPromptTemplate 讓結構更清晰
