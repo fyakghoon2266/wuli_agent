@@ -53,5 +53,14 @@ class Config:
     GITHUB_REPO_NAME=os.getenv("GITHUB_REPO_NAME")
     BASE_BRANCH=os.getenv("BASE_BRANCH")
 
+    AUTHORIZED_USERS = [
+        ("wuli_admin", os.getenv("ADMIN_PASSWORD")),      # 維運主管
+        ("wuli_master", os.getenv("user")),
+    ]
+
+    # 2. 定義誰是「管理員」 (給 Wuli 判斷權限用)
+    # 只有這些帳號可以使用「寫入/修改/開單」的工具
+    ADMIN_USERS = ["wuli_admin"]
+
 # 實例化一個全域設定物件
 settings = Config()
