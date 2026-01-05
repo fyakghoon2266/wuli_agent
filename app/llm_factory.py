@@ -21,6 +21,8 @@ from app.tools.search import get_search_tool
 from app.tools.git_ops import propose_new_error_card
 from app.tools.incident import log_incident_for_weekly_report
 from app.tools.selfie import send_wuli_photo
+from app.tools.jira_ops import report_issue_to_jira
+from app.tools.lifecycle import check_model_eol
 
 def build_llm():
     """
@@ -85,7 +87,9 @@ def build_agent_executor():
         get_search_tool,                # 新增：外部搜尋 (最後一道防線)
         propose_new_error_card,
         log_incident_for_weekly_report,
-        send_wuli_photo
+        send_wuli_photo,
+        report_issue_to_jira,
+        check_model_eol
     ]
 
     # 4. 設定 Prompt Template

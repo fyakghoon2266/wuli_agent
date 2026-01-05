@@ -29,6 +29,13 @@ class Config:
     SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
     ENGINEER_EMAIL = os.getenv("ENGINEER_EMAIL")
 
+    # jira
+    JIRA_URL = os.getenv("JIRA_URL")  # 例如 https://your-company.atlassian.net
+    JIRA_USER = os.getenv("JIRA_USER") # 你的 Email
+    JIRA_API_TOKEN = os.getenv("JIRA_API_TOKEN") # API Token
+    JIRA_PROJECT_KEY = os.getenv("JIRA_PROJECT_KEY") # 例如 "OPS" 或 "GAIA"
+    JIRA_PARENT_TICKET = "GA-633"
+
     # DB 設定
     LITELLM_DB_CONFIG = {
         "dbname": "litellm",
