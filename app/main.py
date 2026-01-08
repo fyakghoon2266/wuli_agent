@@ -16,7 +16,7 @@ from app.config import settings
 from app.llm_factory import build_agent_executor # 移除 AgentSingleton，直接用 build
 from app.ui.layout import create_demo
 from app.utils.logging import save_chat_log
-from app.scheduler import start_scheduler
+from app.scheduler import start_scheduler, run_weekly_eol_scan
 
 # ===================== 檔案讀取工具 (保持不變) =====================
 
@@ -283,12 +283,49 @@ def on_feedback(x: gr.LikeData, history):
     # (此部分代碼保持原本的樣子，為了節省版面我先略過，不需要修改)
     pass 
 
+# 🔥 [新增] 用來更新登入狀態的函式
+def update_login_info(request: gr.Request):
+    """
+    當網頁載入時觸發。
+    檢查 request.username 並回傳歡迎訊息。
+    """
+    if not request:
+        return "👻 未登入 (Guest)"
+        
+    username = request.username
+    
+    # 判斷身分
+    if username in settings.ADMIN_USERS:
+        role_display = "🛡️ 管理員 (Admin)"
+        color = "green" # 可以用 markdown 語法上色
+    else:
+        role_display = "👤 一般使用者 (User)"
+        color = "blue"
+        
+    # 回傳 Markdown 格式的字串
+    # 這裡的 <div style='text-align: right'> 可以讓文字靠右對齊，看起來像右上角的資訊欄
+    return f"""
+    <div style='text-align: right; font-size: 1.1em;'>
+        👋 嗨，<b>{username}</b>！<br>
+        目前身分：<span style='color: {color}; font-weight: bold;'>{role_display}</span>
+    </div>
+    """
+
 # ===================== 程式入口 =====================
 
 if __name__ == "__main__":
 
     # 1. 啟動排程
     start_scheduler()
+    
+    # 🔥 [測試區] 強制立刻執行一次 EOL 檢查
+    # 測試完記得註解掉，不然每次重啟都會寄信！
+    print("⚡️ [DEBUG] 正在執行手動測試：EOL 掃描...")
+    try:
+        run_weekly_eol_scan()
+    except Exception as e:
+        print(f"❌ 測試執行失敗: {e}")
+    print("⚡️ [DEBUG] 測試結束，啟動 UI...")
 
     # 2. 建立 UI
     demo = create_demo(respond_fn=respond, feedback_fn=on_feedback)

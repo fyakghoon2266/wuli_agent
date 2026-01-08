@@ -82,12 +82,12 @@ def build_agent_executor(is_admin: bool = False):
         get_search_tool,               # 上網搜尋 (Tavily)
         verify_prompt_with_guardrails, # 檢查護欄
         send_wuli_photo,               # 看貓照
-        check_model_eol              # 查模型 EOL
+        check_model_eol,              # 查模型 EOL
+        send_email_to_engineer,        # 騷擾工程師
     ]
 
     # 2. 定義管理員工具 (只有 Admin 能用：寫入、發信、開票)
     admin_tools = [
-        send_email_to_engineer,        # 騷擾工程師
         propose_new_error_card,        # 新增錯誤知識庫
         log_incident_for_weekly_report,# 寫週報
         report_issue_to_jira           # 開 Jira 單
