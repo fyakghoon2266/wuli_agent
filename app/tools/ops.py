@@ -28,7 +28,7 @@ def search_error_cards(query: str):
     return "\n\n".join(context_blocks)
 
 # ==========================================
-# 核心邏輯 (共用函式，不掛 @tool)
+# 核心邏輯 (修正版：從 metadata 挖出 user_api_key_alias)
 # ==========================================
 def _core_log_search(
     key_name: Optional[str],
@@ -41,13 +41,12 @@ def _core_log_search(
         conn = psycopg2.connect(**settings.LITELLM_DB_CONFIG)
         cursor = conn.cursor()
 
-        # 🔥 修正 1: 多 SELECT "api_key_alias" (對應 UI 的 Key Name)
-        # LiteLLM 的 "user" 欄位通常存的是 internal user id (default_user_id)
+        # 🔥 重點修正 1：使用 ->> 運算子從 metadata JSON 中取出 user_api_key_alias
         base_sql = """
         SELECT 
             ("startTime" + INTERVAL '8 hours') as local_time,
             "user",
-            "api_key_alias", 
+            metadata->>'user_api_key_alias' as api_key_alias, 
             messages, 
             proxy_server_request, 
             response
@@ -57,9 +56,9 @@ def _core_log_search(
         conditions = []
         params = []
 
-        # 🔥 修正 2: 過濾條件改為比對 "api_key_alias"
+        # 🔥 重點修正 2：過濾條件也要改成比對 metadata 裡的值
         if key_name:
-            conditions.append('"api_key_alias" = %s')
+            conditions.append("metadata->>'user_api_key_alias' = %s")
             params.append(key_name)
 
         # 時間條件
@@ -89,10 +88,10 @@ def _core_log_search(
 
         result_text = []
         for row in rows:
-            # 🔥 修正 3: 解包時多一個欄位
+            # 解包欄位 (注意順序要跟 SELECT 一樣)
             t_start, user_id, api_key_alias, msgs, proxy_req, resp = row
             
-            # 優先顯示 Alias，如果沒有 Alias 才顯示 user_id
+            # 🔥 顯示邏輯：優先顯示 Alias，如果它是 None (例如 Master Key 呼叫)，就顯示 "無 Alias"
             display_project_name = api_key_alias if api_key_alias else f"{user_id} (無 Alias)"
 
             if isinstance(t_start, datetime.datetime):
@@ -112,8 +111,9 @@ def _core_log_search(
                 except:
                     pass
 
-            # 關鍵字過濾 (同時比對 alias 和 user_id)
+            # 關鍵字過濾 (同時比對 alias 和 user_id，防呆)
             if keyword:
+                # 這裡要小心 api_key_alias 可能是 None，要轉 str 避免報錯
                 search_target = f"{str(user_id)} {str(api_key_alias)} {prompt_content}"
                 if keyword.lower() not in search_target.lower():
                     continue
@@ -128,7 +128,6 @@ def _core_log_search(
                     if choices:
                         output_content = f"✅ Reply: {choices[0]['message']['content'][:50]}..."
 
-            # 🔥 修正 4: 顯示正確的 Key Name
             log_entry = (
                 f"⏰ 時間: {t_start_str}\n"
                 f"👤 Key Name: {display_project_name}\n"
@@ -146,11 +145,9 @@ def _core_log_search(
     except Exception as e:
         return f"💥 資料庫查詢失敗: {str(e)}"
 
-
 # ==========================================
 # 工具定義 (雙軌制)
 # ==========================================
-
 @tool("search_litellm_logs_admin")
 def search_litellm_logs_admin(
     key_name: Optional[str] = None,
