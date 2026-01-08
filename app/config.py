@@ -38,7 +38,7 @@ class Config:
 
     # DB 設定
     LITELLM_DB_CONFIG = {
-        "dbname": "litellm_user",
+        "dbname": "litellm_db",
         "user": "litellm_user",
         "password": os.getenv("DB_PASSWORD"), # 建議這也改用 os.getenv("DB_PASSWORD")
         "host": "localhost",
