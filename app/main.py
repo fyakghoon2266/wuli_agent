@@ -317,15 +317,6 @@ if __name__ == "__main__":
 
     # 1. 啟動排程
     start_scheduler()
-    
-    # 🔥 [測試區] 強制立刻執行一次 EOL 檢查
-    # 測試完記得註解掉，不然每次重啟都會寄信！
-    print("⚡️ [DEBUG] 正在執行手動測試：EOL 掃描...")
-    try:
-        run_weekly_eol_scan()
-    except Exception as e:
-        print(f"❌ 測試執行失敗: {e}")
-    print("⚡️ [DEBUG] 測試結束，啟動 UI...")
 
     # 2. 建立 UI
     demo = create_demo(respond_fn=respond, feedback_fn=on_feedback)
