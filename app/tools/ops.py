@@ -27,6 +27,9 @@ def search_error_cards(query: str):
     
     return "\n\n".join(context_blocks)
 
+# ==========================================
+# 核心邏輯 (共用函式，不掛 @tool)
+# ==========================================
 def _core_log_search(
     key_name: Optional[str],
     keyword: str,
@@ -38,10 +41,13 @@ def _core_log_search(
         conn = psycopg2.connect(**settings.LITELLM_DB_CONFIG)
         cursor = conn.cursor()
 
+        # 🔥 修正 1: 多 SELECT "api_key_alias" (對應 UI 的 Key Name)
+        # LiteLLM 的 "user" 欄位通常存的是 internal user id (default_user_id)
         base_sql = """
         SELECT 
             ("startTime" + INTERVAL '8 hours') as local_time,
             "user",
+            "api_key_alias", 
             messages, 
             proxy_server_request, 
             response
@@ -51,9 +57,9 @@ def _core_log_search(
         conditions = []
         params = []
 
-        # 🔥 關鍵修改：如果有 key_name，就強制加上過濾條件
+        # 🔥 修正 2: 過濾條件改為比對 "api_key_alias"
         if key_name:
-            conditions.append('"user" = %s')
+            conditions.append('"api_key_alias" = %s')
             params.append(key_name)
 
         # 時間條件
@@ -76,15 +82,19 @@ def _core_log_search(
         rows = cursor.fetchall()
         conn.close()
         
+        target = f"專案 Key Name '{key_name}'" if key_name else "所有紀錄"
+        
         if not rows:
-            target = f"專案 '{key_name}'" if key_name else "所有紀錄"
             return f"📭 查詢完成，在 {target} 中找不到符合的 Log (已校正時區)。"
 
-        # --- 格式化輸出 (維持你原本的邏輯) ---
         result_text = []
         for row in rows:
-            t_start, user_id, msgs, proxy_req, resp = row
+            # 🔥 修正 3: 解包時多一個欄位
+            t_start, user_id, api_key_alias, msgs, proxy_req, resp = row
             
+            # 優先顯示 Alias，如果沒有 Alias 才顯示 user_id
+            display_project_name = api_key_alias if api_key_alias else f"{user_id} (無 Alias)"
+
             if isinstance(t_start, datetime.datetime):
                 t_start_str = t_start.strftime("%Y-%m-%d %H:%M:%S")
             else:
@@ -102,9 +112,9 @@ def _core_log_search(
                 except:
                     pass
 
-            # 關鍵字過濾
+            # 關鍵字過濾 (同時比對 alias 和 user_id)
             if keyword:
-                search_target = f"{str(user_id)} {prompt_content}"
+                search_target = f"{str(user_id)} {str(api_key_alias)} {prompt_content}"
                 if keyword.lower() not in search_target.lower():
                     continue
 
@@ -118,9 +128,10 @@ def _core_log_search(
                     if choices:
                         output_content = f"✅ Reply: {choices[0]['message']['content'][:50]}..."
 
+            # 🔥 修正 4: 顯示正確的 Key Name
             log_entry = (
                 f"⏰ 時間: {t_start_str}\n"
-                f"👤 Project: {user_id}\n"
+                f"👤 Key Name: {display_project_name}\n"
                 f"📝 Prompt: {prompt_content[:100]}...\n"
                 f"📤 狀態: {output_content}\n"
                 "------------------------------------------------"
@@ -137,8 +148,9 @@ def _core_log_search(
 
 
 # ==========================================
-# 工具 1：給管理員用 (Admin) - Key Name 可選
+# 工具定義 (雙軌制)
 # ==========================================
+
 @tool("search_litellm_logs_admin")
 def search_litellm_logs_admin(
     key_name: Optional[str] = None,
@@ -149,18 +161,13 @@ def search_litellm_logs_admin(
 ):
     """
     【LiteLLM Log 查詢工具 - 管理員版】
-    
-    參數：
-    - key_name: (選填) 指定要查詢的專案代號。若不填，則查詢「所有」專案的紀錄。
-    - keyword: 搜尋 prompt 內容關鍵字。
-    - lookback_minutes: 搜尋過去 N 分鐘 (預設 60)。
+    key_name 為選填。
+    若不填 key_name，將查詢「所有專案」的紀錄。
+    若填寫 key_name，則過濾特定專案。
     """
     return _core_log_search(key_name, keyword, lookback_minutes, start_time, end_time)
 
 
-# ==========================================
-# 工具 2：給一般人用 (User) - Key Name 必填
-# ==========================================
 @tool("search_litellm_logs_user")
 def search_litellm_logs_user(
     key_name: str,
@@ -171,13 +178,8 @@ def search_litellm_logs_user(
 ):
     """
     【LiteLLM Log 查詢工具 - 一般用戶版】
-    
-    ⚠️ 注意：此工具【必須】提供 `key_name` 參數。
-    如果使用者沒有提供，請詢問使用者：「請問您的 Key Name (專案代號) 是什麼？」。
-    
-    參數：
-    - key_name: (必填) 使用者的 Key Name / Project ID (例如 'BU_Marketing')。
-    - keyword: 搜尋 prompt 內容關鍵字。
+    key_name 為必填。
+    必須提供 Key Name (專案代號) 才能查詢，不可查詢全域紀錄。
     """
     if not key_name:
         return "⛔ 錯誤：一般使用者查詢 Log 時，必須提供 Key Name (專案代號)。"
