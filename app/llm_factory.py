@@ -14,7 +14,7 @@ from app.prompts import SYSTEM_PROMPT
 from app.rag.retriever import init_rag
 
 # 引入拆分後的工具 (請確保這些檔案已建立)
-from app.tools.ops import search_error_cards, search_litellm_logs
+from app.tools.ops import search_error_cards, search_litellm_logs_admin, search_litellm_logs_user
 from app.tools.communication import send_email_to_engineer
 from app.tools.security import verify_prompt_with_guardrails
 from app.tools.search import get_search_tool
@@ -75,15 +75,23 @@ def build_agent_executor(is_admin: bool = False):
     根據是否為管理員，回傳不同權限的 Agent
     """
     
-    # 1. 定義基礎工具 (所有人都能用：搜尋、問答、查看照片)
+    if is_admin:
+        log_tool = search_litellm_logs_admin
+    else:
+        log_tool = search_litellm_logs_user
+    
+    # 🔥 強制將工具名稱統一，這樣 System Prompt 不需要為了不同人寫兩套
+    log_tool.name = "search_litellm_logs"
+
+    # 2. 定義基礎工具
     base_tools = [
-        search_error_cards,            # 查錯誤卡片
-        search_litellm_logs,           # 查 Log (唯讀)
-        get_search_tool,               # 上網搜尋 (Tavily)
-        verify_prompt_with_guardrails, # 檢查護欄
-        send_wuli_photo,               # 看貓照
-        check_model_eol,              # 查模型 EOL
-        send_email_to_engineer,        # 騷擾工程師
+        search_error_cards,            
+        log_tool,                      # <--- 這裡放動態決定的工具
+        get_search_tool,               
+        verify_prompt_with_guardrails, 
+        send_wuli_photo,               
+        check_model_eol,              
+        send_email_to_engineer,        
     ]
 
     # 2. 定義管理員工具 (只有 Admin 能用：寫入、發信、開票)
