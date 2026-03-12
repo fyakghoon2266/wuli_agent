@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 .gradio
 
+feedback_log/
 # C extensions
 *.so
 
