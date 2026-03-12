@@ -53,9 +53,25 @@ class LangChainOpenAIEmbeddingFunction(embedding_functions.EmbeddingFunction):
         return self._emb.embed_documents(texts)
 
 
-def build_client() -> chromadb.PersistentClient:
-    Path(CHROMA_DIR).mkdir(parents=True, exist_ok=True)
-    return chromadb.PersistentClient(path=CHROMA_DIR)
+_global_chroma_client = None
+
+def build_client():
+    global _global_chroma_client
+    
+    # 如果還沒有連線過，才建立新連線
+    if _global_chroma_client is None:
+        
+        # 🧹 關鍵防呆：清除 ChromaDB 內部錯亂的系統快取
+        try:
+            chromadb.api.client.SharedSystemClient.clear_system_cache()
+        except Exception:
+            pass
+
+        # 建立並暫存連線
+        _global_chroma_client = chromadb.PersistentClient(path=CHROMA_DIR)
+
+    # 如果已經連線過，就直接回傳暫存的 Client
+    return _global_chroma_client
 
 
 # def build_embedding_function():
