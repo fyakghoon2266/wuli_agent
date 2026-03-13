@@ -102,20 +102,21 @@ class Config:
     # 針對特定專案，如果該專案底下的模型快過期，才寄信給該 PM
     PM_PROJECT_WATCHLIST = [
         {
-            "project_name": "Cub search",
+            "project_name": "Cube Search",
             "pm_name": "王儀茹 Ada",
-            "pm_emails": ["NT96931@cathaybk.com.tw","NT92018@cathaybk.com.tw"],
+            "pm_emails": ["NT96931@cathaybk.com.tw","NT92018@cathaybk.com.tw", "NT96776@cathaybk.com.tw", "NT91893@cathaybk.com.tw", "NT85989@cathaybk.com.tw", "NT95597@cathaybk.com.tw", "NT91612@cathaybk.com.tw"],
             "models": [
                 ("aws", "Claude 3.7 Sonnet"), 
-                ("aws", "titan embed text V2")
+                ("aws", "titan embed text V2"),
+                ("aws", "Claude-sonnet-4-5")
             ]
         },
         {
             "project_name": "理專AI助手 (Call-Record Summary)",
             "pm_name": "莊文遠 Brain",
-            "pm_emails": ["NT89356@cathaybk.com.tw","NT92018@cathaybk.com.tw"],
+            "pm_emails": ["NT89356@cathaybk.com.tw","NT92018@cathaybk.com.tw", "NT96776@cathaybk.com.tw", "NT91893@cathaybk.com.tw", "NT85989@cathaybk.com.tw", "NT95597@cathaybk.com.tw", "NT91612@cathaybk.com.tw"],
             "models": [
-                ("aws", "Claude 3.5 Sonnet v2")
+                ("aws", "Claude 3.7 Sonnet v2")
             ]
         },
         # 可以繼續新增更多專案...
