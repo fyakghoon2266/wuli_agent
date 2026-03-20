@@ -2,6 +2,8 @@ import os
 import json
 import time
 import glob
+import logging
+import sys
 
 # --- 設定區 ---
 LOG_DIR = "log"  # 資料夾名稱
@@ -10,6 +12,34 @@ LOG_PATH = os.path.join(LOG_DIR, LOG_FILENAME)
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 限制單一檔案最大 5MB
 BACKUP_COUNT = 10                # 最多保留 10 份舊檔案 (超過就刪除最舊的)
+
+def get_logger(name: str) -> logging.Logger:
+    """
+    取得一個設定好格式與時間戳記的 Logger。
+    
+    Args:
+        name (str): 呼叫此 Logger 的模組名稱 (通常傳入 __name__)
+    """
+    logger = logging.getLogger(name)
+    
+    # 避免重複加入 Handler 導致日誌印出多次
+    if not logger.hasHandlers():
+        # 設定預設攔截的等級 (INFO 以上的才會印出來，DEBUG 會被忽略)
+        logger.setLevel(logging.INFO)
+        
+        # 設定輸出到終端機 (Console)
+        handler = logging.StreamHandler(sys.stdout)
+        
+        # 🌟 定義超清楚的日誌格式：時間 | 級別 | 模組名稱 | 訊息
+        formatter = logging.Formatter(
+            fmt='%(asctime)s | %(levelname)-8s | [%(name)s] %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        
+    return logger
 
 def save_chat_log(user_msg, bot_msg):
     """

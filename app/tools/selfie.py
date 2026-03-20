@@ -3,16 +3,21 @@ import os
 import random
 from langchain.tools import tool
 
+from app.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 # ==========================================
 # 設定區：照片與情境對照表
 # ==========================================
 
 # 照片存放目錄
-PHOTO_DIR = "app/images/wuli"
+WULI_PHOTO_DIR = "app/images/wuli"
+MILU_PHOTO_DIR = "app/images/milu"
 
 # 🔥 照片與情境的對照表 (Key: 檔名, Value: 情境列表)
 # 程式會先隨機選一張照片，再從該照片的列表中隨機選一句話。
-PHOTO_MOOD_MAP = {
+WULI_MOOD_MAP = {
     # --- 第一批 (7張) ---
 
     # 1. 縮成一團睡覺 (米色背景)
@@ -108,59 +113,98 @@ PHOTO_MOOD_MAP = {
 
 }
 
+MILU_MOOD_MAP = {
+    "IMG_9995.jpg": ["這是 Milu 睡著的樣子，簡直像天使一樣..."],
+    "IMG_0770.jpeg": ["這是 Milu 跟我一起幫爸爸修電腦的樣子，爸爸沒有我們真的不行"],
+    "IMG_8287.jpg": ["喵~ 既然你問了，就讓你看看我最親愛的妹妹 Milu 吧！是不是很可愛？(ฅ'ω'ฅ)"],
+    "IMG_7879.jpg": ["這是我家的小公主 Milu！她平時可不負責看 Log，只負責鬼靈精怪！✨"],
+
+}
+
+MILU_DEFAULT_MOODS = [
+    "喵~ 既然你問了，就讓你看看我最親愛的妹妹 Milu 吧！是不是很可愛？(ฅ'ω'ฅ)",
+    "這是我家的小公主 Milu！她平時可不負責看 Log，只負責賣萌喔！✨",
+    "登登！這是 Milu 妹妹的照片！看到她，今天 debug 的壓力是不是都消失了呢？",
+    "哼哼，雖然我是專業的 SRE 助理，但在可愛這方面，我可能要讓她三分了。"
+]
+
 
 # ==========================================
 # 工具主程式
 # ==========================================
 
-@tool("send_wuli_photo")
-def send_wuli_photo(query: str):
+def get_random_photo_and_mood(photo_dir: str, mood_map: dict, default_moods: list = None):
     """
-    Call this tool when the user explicitly asks for your photo, selfie, or what you look like.
+    通用函式：從指定目錄隨機挑選照片與情境。
     """
-    # 1. 取得目前資料夾內實際存在的檔案
-    if not os.path.exists(PHOTO_DIR):
-        return "😿 哎呀，我的相簿資料夾好像不見了..."
-    
-    try:
-        existing_files = os.listdir(PHOTO_DIR)
-    except Exception as e:
-         return f"😿 讀取相簿失敗: {str(e)}"
-
-    # 2. 過濾出「我們有設定情境」且「實際存在於資料夾」的檔案
-    # 這一步很重要，避免你程式碼寫了檔名，但忘記把圖檔放進去
-    available_photos = [f for f in existing_files if f in PHOTO_MOOD_MAP]
-
-    if not available_photos:
-        # 如果對照表的檔案都找不到，就檢查是否有任何圖片
-        image_extensions = ('.jpg', '.jpeg', '.png', '.gif')
-        any_images = [f for f in existing_files if f.lower().endswith(image_extensions)]
+    if not os.path.exists(photo_dir):
+        logger.error(f"❌ 找不到相簿資料夾: {photo_dir}")
+        return None, None
         
-        if any_images:
-            # 有圖片但沒設定情境，隨機選一張並給通用回答
-            selected_filename = random.choice(any_images)
-            selected_mood = "這是我隨手拍的一張照片！希望你喜歡！😺"
-        else:
-            # 真的沒圖了
-            return "😿 我的相簿裡目前空空的，沒照片可以給你看..."
-    else:
-        # 3. 🔥 核心邏輯：隨機選一張有設定過情境的照片
-        selected_filename = random.choice(available_photos)
-        # 4. 🔥 從該照片的情境列表中，再隨機選一句話
-        selected_mood = random.choice(PHOTO_MOOD_MAP[selected_filename])
+    try:
+        existing_files = [f for f in os.listdir(photo_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif'))]
+    except Exception as e:
+        logger.error(f"❌ 讀取相簿失敗: {str(e)}")
+        return None, None
+        
+    if not existing_files:
+        return None, None
 
-    # 5. 組合路徑
-    relative_path = f"{PHOTO_DIR}/{selected_filename}"
+    # 隨機選一張照片
+    selected_filename = random.choice(existing_files)
+    
+    # 決定台詞：如果有專屬對白就用，沒有就用預設對白，再沒有就給通用的一句話
+    if selected_filename in mood_map:
+        selected_mood = random.choice(mood_map[selected_filename])
+    elif default_moods:
+        selected_mood = random.choice(default_moods)
+    else:
+        selected_mood = "這是我隨手拍的一張照片！希望你喜歡！😺"
+        
+    return selected_filename, selected_mood
+
+
+@tool("send_photo_album")
+def send_photo_album(query: str):
+    """
+    Call this tool when the user explicitly asks for a photo, selfie, or what you (Wuli) or your sister (Milu) look like.
+    Use the 'query' argument to determine if they are asking for Wuli or Milu.
+    """
+    query_lower = query.lower()
+    
+    # 判斷使用者是要看誰的照片 (預設是 Wuli)
+    is_asking_for_milu = any(keyword in query_lower for keyword in ["milu", "妹妹", "妹"])
+    
+    if is_asking_for_milu:
+        logger.info("🎉 觸發 Milu 彩蛋！準備發送妹妹的照片。")
+        target_dir = MILU_PHOTO_DIR
+        target_map = MILU_MOOD_MAP
+        default_moods = MILU_DEFAULT_MOODS
+        alt_text = "Milu's Photo"
+    else:
+        logger.info("📸 準備發送 Wuli 的自拍照。")
+        target_dir = WULI_PHOTO_DIR
+        target_map = WULI_MOOD_MAP
+        default_moods = None # Wuli 目前都是強關聯，找不到就給預設一句話
+        alt_text = "Wuli's Selfie"
+
+    # 取得照片與對白
+    selected_filename, selected_mood = get_random_photo_and_mood(target_dir, target_map, default_moods)
+
+    if not selected_filename:
+         return "😿 哎呀，我的相簿好像有點問題，找不到照片..."
+
+    # 組合相對路徑
+    relative_path = f"{target_dir}/{selected_filename}"
     
     # 組合 Gradio URL (關鍵格式)
-    # 格式: /root_path + /gradio_api + /file= + 相對路徑
     image_url = f"/wuliagent/gradio_api/file={relative_path}"
 
-    # 6. 回傳給 LLM 的指令 (In-context Injection)
+    # 回傳給 LLM 的指令 (In-context Injection)
     return (
-        f"SYSTEM_NOTE: I have randomly selected the photo '{selected_filename}'. "
+        f"SYSTEM_NOTE: I have randomly selected the photo '{selected_filename}' from the album. "
         f"My specific mood/context for this photo is: '{selected_mood}'. "
         "You MUST incorporate this mood description naturally into your reply to make it feel alive. "
         "Finally, you MUST include the following markdown line EXACTLY at the end of your response:\n\n"
-        f"![Wuli's Selfie]({image_url})"
+        f"![{alt_text}]({image_url})"
     )

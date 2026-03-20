@@ -62,63 +62,84 @@ class Config:
     # 只有這些帳號可以使用「寫入/修改/開單」的工具
     ADMIN_USERS = ["wuli_admin"]
 
+    EOL_NOTIFICATION_LIST = [
+        "NT96776@cathaybk.com.tw",
+        "NT85989@cathaybk.com.tw",
+        "NT95597@cathaybk.com.tw",
+        "NT87974@cathaybk.com.tw",
+        "NT92018@cathaybk.com.tw",
+        "NT91612@cathaybk.com.tw",
+        "NT97660@cathaybk.com.tw",
+        "NT99441@cathaybk.com.tw",
+        "NT95233@cathaybk.com.tw",
+    ]
+
     # 🔥 [清單 1] SRE 維運團隊關注的「全量模型清單」
     # 這裡列出所有運作中的模型，Wuli 會檢查它們並寫入維運週報
-    # SRE_MODEL_WATCHLIST = [
-    #     ("azure", "text-embedding-ada-002"),
-    #     ("azure", "text-embedding-3-small"),
-    #     ("azure", "gpt-4o"),
-    #     ("aws", "amazon.titan-embed-text-v2:0"),
-    #     ("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0"),
-    #     ("aws", "anthropic.claude-3-5-haiku-20241022-v1:0"),
-    #     ("aws", "anthropic.claude-3-7-sonnet-20250219-v1:0"),
-    #     ("aws", "openai.gpt-oss-120b-1:0"),
-    #     ("aws", "openai.gpt-oss-20b-1:0"),
-    #     ("aws", "llama3-1-405b-instruct-v1:0"),
-    #     ("aws", "llama3-2-11b-instruct-v1:0"),
-    #     ("aws", "llama3-3-70b-instruct-v1:0"),
-    #     ("aws", "llama3-8b-instruct-v1:0"),
-    #     ("aws", "anthropic.claude-sonnet-4-20250514-v1:0"),
-    #     ("aws", "anthropic.claude-haiku-4-5-20251001-v1:0"),
-    #     ("aws", "anthropic.claude-sonnet-4-5-20250929-v1:0"),
-    #     ("aws", "anthropic.claude-opus-4-1-20250805-v1:0"),
-    #     ("aws", "llama4-maverick-17b-instruct-v1:0"),
-    #     ("aws", "llama4-scout-17b-instruct-v1:0"),
-    #     ("gcp", "gemini-2.0-flash"),
-    #     ("gcp", "gemini-2.5-pro"),
-    #     ("gcp", "gemini-2.5-flash-lite"),
-    #     ("gcp", "text-multilingual-embedding-002"),
-    # ]
     SRE_MODEL_WATCHLIST = [
-
-        ("aws", "Claude 3.5 Sonnet v1"),
-        ("aws", "Claude 3.5 Haiku"),
-        ("aws", "Claude 3.5 Sonnet v2"),
-        ("aws", "Claude 3.7 Sonnet v1"),
-        ("aws", "gpt oss 120b "),
+        ("azure", "text-embedding-ada-002"),
+        ("azure", "text-embedding-3-small"),
+        ("azure", "gpt-4o"),
+        ("aws", "amazon.titan-embed-text-v2:0"),
+        ("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0"),
+        ("aws", "anthropic.claude-3-5-haiku-20241022-v1:0"),
+        ("aws", "anthropic.claude-3-7-sonnet-20250219-v1:0"),
+        ("aws", "openai.gpt-oss-120b-1:0"),
+        ("aws", "openai.gpt-oss-20b-1:0"),
+        ("aws", "llama3-1-405b-instruct-v1:0"),
+        ("aws", "llama3-2-11b-instruct-v1:0"),
+        ("aws", "llama3-3-70b-instruct-v1:0"),
+        ("aws", "llama3-8b-instruct-v1:0"),
+        ("aws", "anthropic.claude-sonnet-4-20250514-v1:0"),
+        ("aws", "anthropic.claude-haiku-4-5-20251001-v1:0"),
+        ("aws", "anthropic.claude-sonnet-4-5-20250929-v1:0"),
+        ("aws", "anthropic.claude-opus-4-1-20250805-v1:0"),
+        ("aws", "llama4-maverick-17b-instruct-v1:0"),
+        ("aws", "llama4-scout-17b-instruct-v1:0"),
+        ("gcp", "gemini-2.0-flash"),
+        ("gcp", "gemini-2.5-pro"),
+        ("gcp", "gemini-2.5-flash-lite"),
+        ("gcp", "text-multilingual-embedding-002"),
     ]
+    # SRE_MODEL_WATCHLIST = [
+
+    #     ("aws", "Claude 3.5 Sonnet v1"),
+    #     ("aws", "Claude 3.5 Haiku"),
+    #     ("aws", "Claude 3.5 Sonnet v2"),
+    #     ("aws", "Claude 3.7 Sonnet v1"),
+    #     ("aws", "gpt oss 120b "),
+    # ]
 
     # 🔥 [清單 2] 專案經理 (PM) 關注的通知清單
     # 針對特定專案，如果該專案底下的模型快過期，才寄信給該 PM
     PM_PROJECT_WATCHLIST = [
         {
-            "project_name": "Cub search",
+            "project_name": "Cube Search",
             "pm_name": "王儀茹 Ada",
-            "pm_emails": ["NT96931@cathaybk.com.tw","NT92018@cathaybk.com.tw"],
+            "pm_emails": ["NT96931@cathaybk.com.tw","NT92018@cathaybk.com.tw", "NT96776@cathaybk.com.tw", "NT91893@cathaybk.com.tw", "NT85989@cathaybk.com.tw", "NT95597@cathaybk.com.tw", "NT91612@cathaybk.com.tw"],
             "models": [
                 ("aws", "Claude 3.7 Sonnet"), 
-                ("aws", "titan embed text V2")
+                ("aws", "titan embed text V2"),
+                ("aws", "Claude-sonnet-4-5")
             ]
         },
         {
             "project_name": "理專AI助手 (Call-Record Summary)",
             "pm_name": "莊文遠 Brain",
-            "pm_emails": ["NT89356@cathaybk.com.tw","NT92018@cathaybk.com.tw"],
+            "pm_emails": ["NT89356@cathaybk.com.tw","NT92018@cathaybk.com.tw", "NT96776@cathaybk.com.tw", "NT91893@cathaybk.com.tw", "NT85989@cathaybk.com.tw", "NT95597@cathaybk.com.tw", "NT91612@cathaybk.com.tw"],
             "models": [
-                ("aws", "Claude 3.5 Sonnet v2")
+                ("aws", "Claude 3.7 Sonnet v2")
             ]
         },
-        # 可以繼續新增更多專案...
+        {
+            "project_name": "效率中心 (Digital Efficiency Automation)",
+            "pm_name": "科技研發科",
+            "pm_emails": ["NT92018@cathaybk.com.tw"],
+            "models": [
+                ("aws", "Claude 3.7 Sonnet v2")
+            ]
+        },
+        # ....這邊可以繼續新增專案清單
     ]
 
 # 實例化一個全域設定物件

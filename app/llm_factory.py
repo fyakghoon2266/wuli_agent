@@ -1,5 +1,4 @@
 # app/llm_factory.py
-
 from langchain_openai import ChatOpenAI, AzureChatOpenAI
 from langchain_aws import ChatBedrock
 # 注意：如果你使用的是新版 langchain，可能需要改為 from langchain.agents import ...
@@ -20,9 +19,12 @@ from app.tools.security import verify_prompt_with_guardrails
 from app.tools.search import get_search_tool
 from app.tools.git_ops import propose_new_error_card
 from app.tools.incident import log_incident_for_weekly_report
-from app.tools.selfie import send_wuli_photo
+from app.tools.selfie import send_photo_album
 from app.tools.jira_ops import report_issue_to_jira
 from app.tools.lifecycle import check_model_eol
+from app.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 def build_llm():
     """
@@ -49,9 +51,8 @@ def build_llm():
         return ChatBedrock(
         model_id=settings.BEDROCK_MODEL_ID,  # 或者用 haiku / opus
         region_name=settings.AWS_REGION,  # 或是你模型開通的區域，如 us-west-2
-        model_kwargs={
-            "temperature": 0.2,
-        }
+        temperature=0.2,
+        max_tokens=50000
     )
 
     else: # 預設為 OpenAI
@@ -89,7 +90,7 @@ def build_agent_executor(is_admin: bool = False):
         log_tool,                      # <--- 這裡放動態決定的工具
         get_search_tool,               
         verify_prompt_with_guardrails, 
-        send_wuli_photo,               
+        send_photo_album,               
         check_model_eol,              
         send_email_to_engineer,        
     ]
@@ -103,10 +104,10 @@ def build_agent_executor(is_admin: bool = False):
 
     # 3. 根據權限組合工具箱
     if is_admin:
-        print("🛡️  啟用 Admin 模式：授權所有高風險工具")
+        logger.info("🛡️  啟用 Admin 模式：授權所有高風險工具")
         tools = base_tools + admin_tools
     else:
-        print("👤 啟用 User 模式：僅授權唯讀/查詢工具")
+        logger.info("👤 啟用 User 模式：僅授權唯讀/查詢工具")
         tools = base_tools
     # 1. 初始化 RAG (載入 ChromaDB)
     # 放在這裡的好處是：只有在 Agent 真正要被建立時，才會去讀取 Vector DB，加快 import 速度
@@ -144,7 +145,7 @@ class AgentSingleton:
     @classmethod
     def get_executor(cls):
         if cls._instance is None:
-            print("🤖 初始化 Wuli Agent ...")
+            logger.info("🤖 初始化 Wuli Agent ...")
             cls._instance = build_agent_executor()
-            print("✅ Wuli Agent 就緒！")
+            logger.info("✅ Wuli Agent 就緒！")
         return cls._instance
