@@ -15,6 +15,9 @@ from app.llm_factory import build_agent_executor
 # 引入 log 路徑
 from app.tools.incident import LOG_FILE, _save_logs
 from app.config import settings
+from app.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 # 設定你的 Email 資訊
 SMTP_SERVER = settings.SMTP_SERVER
@@ -42,7 +45,7 @@ def send_email_report(subject, body, to_emails=None):
     recipients = list(set([e for e in to_emails if e]))
     
     if not recipients:
-        print("❌ 發信失敗: 沒有有效的收件人")
+        logger.warning("❌ 發信失敗: 沒有有效的收件人")
         return False
 
     msg = MIMEMultipart()
@@ -57,20 +60,20 @@ def send_email_report(subject, body, to_emails=None):
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.send_message(msg)
         server.quit()
-        print(f"📧 信件發送成功！(To: {recipients})")
+        logger.info(f"📧 信件發送成功！(To: {recipients})")
         return True
     except Exception as e:
-        print(f"❌ 發信失敗 (To: {recipients}): {str(e)}")
+        logger.waring(f"❌ 發信失敗 (To: {recipients}): {str(e)}")
         return False
 
 def generate_and_send_weekly_report():
     """
     [SRE 週報] 每週五執行
     """
-    print("⏰ 排程啟動：正在檢查是否需要發送週報...")
+    logger.info("⏰ 排程啟動：正在檢查是否需要發送週報...")
     
     if not os.path.exists(LOG_FILE):
-        print("📭 沒有週報檔案，略過。")
+        logger.info("📭 沒有週報檔案，略過。")
         return
 
     try:
@@ -80,7 +83,7 @@ def generate_and_send_weekly_report():
         logs = []
 
     if not logs:
-        print("📭 本週無事故記錄，略過發信。")
+        logger.info("📭 本週無事故記錄，略過發信。")
         return
 
     # --- 整理內容 (HTML) ---
@@ -123,13 +126,13 @@ def generate_and_send_weekly_report():
     # --- 發送 ---
     if send_email_report(f"[Gaia Ops] Wuli 週報 - {len(logs)} 件紀錄", email_body):
         _save_logs([])
-        print("🧹 已清空週報暫存檔，準備迎接下週。")
+        logger.info("🧹 已清空週報暫存檔，準備迎接下週。")
 
 def run_weekly_eol_scan():
     """
     [每週五綜合巡檢] - EOL 掃描
     """
-    print(f"🕵️‍♂️ [週五巡檢] Wuli 開始執行全域模型 EOL 掃描... (Today: {datetime.date.today()})")
+    logger.info(f"🕵️‍♂️ [週五巡檢] Wuli 開始執行全域模型 EOL 掃描... (Today: {datetime.date.today()})")
     
     unique_models = set()
     
@@ -141,7 +144,7 @@ def run_weekly_eol_scan():
             unique_models.add((p, m))
             
     if not unique_models:
-        print("⚠️ 沒有設定任何模型，結束檢查。")
+        logger.info("⚠️ 沒有設定任何模型，結束檢查。")
         return
 
     eol_cache = {} 
@@ -150,7 +153,7 @@ def run_weekly_eol_scan():
     # 這裡只需要 Admin 權限來執行 Tavily 搜尋，不需要寄信權限 (因為我們改用 Python 寄信了)
     agent = build_agent_executor(is_admin=True) 
     
-    print(f"🔍 正在查詢 {len(unique_models)} 個模型的 EOL 資訊...")
+    logger.info(f"🔍 正在查詢 {len(unique_models)} 個模型的 EOL 資訊...")
     
     # ---------------------------------------------------------
     # 2. 查詢階段 (LLM + Tavily)
@@ -219,22 +222,22 @@ def run_weekly_eol_scan():
             
             if is_expiring:
                 expiring_models.add((provider, model))
-                print(f"⚠️  [過期預警] {provider}/{model}")
+                logger.info(f"⚠️  [過期預警] {provider}/{model}")
             else:
-                print(f"✅ [安全] {provider}/{model}")
+                logger.info(f"✅ [安全] {provider}/{model}")
                 
             time.sleep(1) # 稍微休息避免 Rate Limit
             
         except Exception as e:
-            print(f"❌ 查詢失敗 {provider}/{model}: {e}")
+            logger.info(f"❌ 查詢失敗 {provider}/{model}: {e}")
 
     # Debug: 印出過期清單，確認是否有東西
-    print(f"📊 統計：共發現 {len(expiring_models)} 個即將過期的模型: {expiring_models}")
+    logger.info(f"📊 統計：共發現 {len(expiring_models)} 個即將過期的模型: {expiring_models}")
 
     # ---------------------------------------------------------
     # 3. SRE 通報階段 (寫入週報)
     # ---------------------------------------------------------
-    print("📝 正在更新 SRE 維運週報...")
+    logger.info("📝 正在更新 SRE 維運週報...")
     
     sre_alerts = [
         (p, m) for p, m in expiring_models 
@@ -259,19 +262,19 @@ def run_weekly_eol_scan():
                 "chat_history": [],
                 "user_message": [HumanMessage(content=log_prompt)]
             })
-            print("✅ 已寫入 SRE 週報。")
+            logger.info("✅ 已寫入 SRE 週報。")
         except Exception as e:
-            print(f"❌ 寫入週報失敗: {e}")
+            logger.warning(f"❌ 寫入週報失敗: {e}")
     else:
-        print("🎉 SRE 清單中沒有即將過期的模型。")
+        logger.info("🎉 SRE 清單中沒有即將過期的模型。")
 
     # ---------------------------------------------------------
     # 4. 發送總整版通知信 (給指定的主管/負責窗口)
     # ---------------------------------------------------------
-    print("📧 正在準備發送總整版 EOL 通知信...")
+    logger.info("📧 正在準備發送總整版 EOL 通知信...")
     
     if not expiring_models:
-        print("✅ 沒有任何模型過期，無需寄送通知信。")
+        logger.info("✅ 沒有任何模型過期，無需寄送通知信。")
         return
         
     # --- 區塊 A：整理全域過期模型的詳細資訊 ---
@@ -316,7 +319,7 @@ def run_weekly_eol_scan():
             """
 
     if not impacted_projects_html:
-        print("✅ 雖然有模型過期，但追蹤中的專案並未受到影響。")
+        logger.info("✅ 雖然有模型過期，但追蹤中的專案並未受到影響。")
         return
 
     # --- 取得要通知的目標信箱清單 ---
@@ -352,9 +355,9 @@ def run_weekly_eol_scan():
     
     # 呼叫 Python 寄信函式，統一寄給你設定的目標清單
     if send_email_report(subject, email_body, to_emails=target_email_list):
-        print(f"✅ 已成功寄出總整版 EOL 通知信！(收件人: {target_email_list})")
+        logger.info(f"✅ 已成功寄出總整版 EOL 通知信！(收件人: {target_email_list})")
     else:
-        print(f"❌ 總整版 EOL 通知信寄送失敗。")
+        logger.warning(f"❌ 總整版 EOL 通知信寄送失敗。")
 
 # --- 啟動排程器 ---
 def start_scheduler():
@@ -367,10 +370,10 @@ def start_scheduler():
     scheduler.add_job(run_weekly_eol_scan, CronTrigger(day_of_week='fri', hour=10, minute=0))
     
     scheduler.start()
-    print("🚀 Wuli 排程器已啟動 (每週五 17:00 寄送週報 / 10:00 EOL 檢查)")
+    logger.info("🚀 Wuli 排程器已啟動 (每週五 17:00 寄送週報 / 10:00 EOL 檢查)")
 
 # --- 以下為手動測試區塊 ---
 if __name__ == "__main__":
-    print("🚀 手動測試模式啟動：開始執行 EOL 掃描...")
+    logger.info("🚀 手動測試模式啟動：開始執行 EOL 掃描...")
     run_weekly_eol_scan()
-    print("🏁 測試執行完畢！")
+    logger.info("🏁 測試執行完畢！")

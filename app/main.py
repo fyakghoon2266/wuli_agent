@@ -1,5 +1,4 @@
 import time
-import json
 import base64
 import mimetypes
 import os
@@ -17,6 +16,9 @@ from app.llm_factory import build_agent_executor # 移除 AgentSingleton，直�
 from app.ui.layout import create_demo
 from app.utils.logging import save_chat_log
 from app.scheduler import start_scheduler, run_weekly_eol_scan
+from app.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 # ===================== 檔案讀取工具 (保持不變) =====================
 
@@ -138,9 +140,10 @@ def respond(message: dict, history: List[Any], request: gr.Request):
     # 1. 🔥 身份識別與權限判斷
     if request:
         username = request.username
-        # print(f"🎤 收到訊息，來自使用者: {username}")
+        logger.info(f"🎤 收到訊息，來自使用者: {username}")
     else:
         username = "guest"
+        logger.info(f"🎤 收到訊息，來自使用者: {username}")
 
     # 判斷是否為管理員 (根據 app/config.py 設定)
     is_admin = username in settings.ADMIN_USERS
@@ -188,7 +191,7 @@ def respond(message: dict, history: List[Any], request: gr.Request):
                         }
                     })
             except Exception as e:
-                print(f"❌ 圖片讀取失敗: {e}")
+                logger.warning(f"❌ 圖片讀取失敗: {e}")
     else:
         user_content = message
         raw_text_input = str(message)
@@ -205,7 +208,7 @@ def respond(message: dict, history: List[Any], request: gr.Request):
         "chat_history": chat_history,
     }
 
-    print(f"🚀 [Debug] User: {username} (Admin: {is_admin}) | Input: {len(raw_text_input)} chars")
+    logger.info(f"🚀 [Debug] User: {username} (Admin: {is_admin}) | Input: {len(raw_text_input)} chars")
 
     # 6. 執行與回傳
     try:
@@ -260,7 +263,7 @@ def respond(message: dict, history: List[Any], request: gr.Request):
 
     except Exception as e:
         error_msg = f"😿 嗚... Wuli 的眼睛好像花了：{str(e)}"
-        print(f"❌ Error Details: {e}")
+        logger.error(f"❌ Error Details: {e}")
         save_chat_log(message, error_msg)
         yield error_msg
         
@@ -322,8 +325,8 @@ if __name__ == "__main__":
     demo = create_demo(respond_fn=respond, feedback_fn=on_feedback)
 
     # 3. 🔥 啟動並加上 Auth 門禁
-    print(f"🔒 Wuli Agent 安全模式啟動")
-    print(f"   - Admin Users: {settings.ADMIN_USERS}")
+    logger.info(f"🔒 Wuli Agent 安全模式啟動")
+    logger.info(f"   - Admin Users: {settings.ADMIN_USERS}")
     
     # 請確保 settings.AUTHORIZED_USERS 格式為 [("帳號", "密碼"), ("帳號2", "密碼2")]
     demo.launch(
