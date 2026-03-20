@@ -19,7 +19,7 @@ from app.tools.security import verify_prompt_with_guardrails
 from app.tools.search import get_search_tool
 from app.tools.git_ops import propose_new_error_card
 from app.tools.incident import log_incident_for_weekly_report
-from app.tools.selfie import send_wuli_photo
+from app.tools.selfie import send_photo_album
 from app.tools.jira_ops import report_issue_to_jira
 from app.tools.lifecycle import check_model_eol
 from app.utils.logging import get_logger
@@ -90,7 +90,7 @@ def build_agent_executor(is_admin: bool = False):
         log_tool,                      # <--- 這裡放動態決定的工具
         get_search_tool,               
         verify_prompt_with_guardrails, 
-        send_wuli_photo,               
+        send_photo_album,               
         check_model_eol,              
         send_email_to_engineer,        
     ]
