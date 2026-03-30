@@ -13,7 +13,7 @@ from langchain_core.messages import HumanMessage
 # 引入 LLM Factory 來做摘要/查詢
 from app.llm_factory import build_agent_executor
 # 引入 log 路徑
-from app.tools.incident import LOG_FILE, _save_logs
+from app.skills.incident import LOG_FILE, _save_logs
 from app.config import settings
 from app.utils.logging import get_logger
 

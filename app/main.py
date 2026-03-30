@@ -17,8 +17,12 @@ from app.ui.layout import create_demo
 from app.utils.logging import save_chat_log
 from app.scheduler import start_scheduler, run_weekly_eol_scan
 from app.utils.logging import get_logger
+from app.skills import get_status_messages
 
 logger = get_logger(__name__)
+
+# 從 Skills 自動載入 tool_name → status_message 對照表
+_TOOL_STATUS_MESSAGES = get_status_messages()
 
 # ===================== 檔案讀取工具 (保持不變) =====================
 
@@ -217,22 +221,11 @@ def respond(message: dict, history: List[Any], request: gr.Request):
             
             if "actions" in chunk:
                 for action in chunk["actions"]:
-                    # 根據工具名稱顯示不同訊息
                     tool_name = action.tool
-                    if tool_name == "search_error_cards":
-                        yield "🐾 Wuli 正在翻閱維運手冊..."
-                    elif tool_name == "search_litellm_logs":
-                         yield "🔍 Wuli 正在潛入資料庫查 Log..."
-                    elif tool_name == "verify_prompt_with_guardrails":
-                         yield "🛡️ Wuli 正在進行安全檢查..."
-                    elif tool_name == "send_email_to_engineer":
-                         yield "📧 Wuli 正在寫信給工程師..."
-                    elif tool_name == "report_issue_to_jira":
-                         yield "🎫 Wuli 正在建立 Jira 卡片..."
-                    elif tool_name == "web_search_technical_solution":
-                         yield "🌐 內部查無資料，Wuli 正在搜尋外部網站解答中..."
-                    else:
-                        yield f"🤖 Wuli 正在使用工具: {tool_name}..."
+                    status_msg = _TOOL_STATUS_MESSAGES.get(
+                        tool_name, f"🤖 Wuli 正在使用工具: {tool_name}..."
+                    )
+                    yield status_msg
             
             if "output" in chunk:
                 final_answer = chunk["output"]
